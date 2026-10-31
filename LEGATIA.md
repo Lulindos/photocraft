@@ -12,6 +12,7 @@ FigCraft) e usa o mesmo método. O branch **`legatia`** é a release do PhotoCra
 | `crates/ui-egui/src/legatia.rs` | As cores da LegatIA (preto, bordas finas, azul #006FFE, cartões de 18 px) sobre os tokens do PhotoCraft. Só vale para os temas **Studio** (escuro e claro); Pro, Classic, Adwaita e os demais ficam como estão. Arquivo só nosso, com testes. |
 | `crates/ui-egui/src/theme.rs` | Só ganchos: `Tokens::for_kind` passa o resultado por `legatia::tokens` (a função de antes virou `for_kind_base`); o tema padrão é o Studio; os rótulos dizem "LegatIA (Dark)" e "LegatIA (Light)". |
 | `crates/engine/src/prefs.rs` (e o teste dos padrões em `prefs/tests.rs`) | Só o padrão: o tema inicial das preferências é o Studio (LegatIA escuro). Sem isso, quem abre o editor pela primeira vez vê o Pro (cinza). |
+| `crates/ui-egui/src/panels/panel_docking.rs` | Só um gancho: `legatia::dock_style` (os cartões do dock ficam separados por 6 px, como no LegatIA Design). |
 | `apps/photocraft-web/src/web.rs`, `crates/ui-egui/src/state.rs` | Só o tema: a versão web abria sempre no Pro (`ThemeKind::Pro` fixo, que também grava a preferência) e o estado inicial era o ProMedium; ambos passam a ser o Studio. |
 | `crates/ui-egui/src/panels/title_bar.rs`, `canvas/start_screen.rs` | Só ganchos: o nome "LegatIA Photo" na barra e na tela inicial (`legatia::NAME`), "based on PhotoCraft" no lugar de "open source", e o rodapé `legatia::start_footer` no lugar do botão do Discord e dos links do PhotoCraft/GitHub/ArtCraft (que levam à comunidade do projeto original). |
 | `crates/ui-egui/src/lib.rs` | `pub mod legatia;` |
@@ -20,9 +21,14 @@ FigCraft) e usa o mesmo método. O branch **`legatia`** é a release do PhotoCra
 | `docs/brand/` | Removido: a licença da marca ArtCraft pede que forks tirem os logos. O `README.md` e o `ATTRIBUTION.md` dizem isso. |
 | `.github/workflows/legatia-web.yml`, `LEGATIA_BASE`, este arquivo | A atualização automática e o build. |
 
-O que **ainda não** foi trazido do LegatIA Design (próximas etapas): o vidro fosco nos painéis, a
-ponte com a página em volta (`host`: salvar na LegatIA, arquivos do projeto) e a Satoshi na interface.
-O PhotoCraft desenha o documento com um motor próprio em blocos, então o vidro precisa de um estudo à parte.
+O que **ainda não** foi trazido do LegatIA Design (próximas etapas):
+
+- **Cantos arredondados de 18 px nos painéis.** O dock do PhotoCraft é desenhado pela biblioteca `craft-ui` (repositório
+  `storytold/craft-libs`), que pinta todos os cantos retos e não tem opção de raio. Precisa de um fork pequeno dela
+  (um campo `corner_radius` no `DockStyle`) ligado aqui por `[patch]`.
+- **O vidro fosco.** Depende dos cantos acima e de o desenho do documento passar por baixo dos painéis: o PhotoCraft
+  desenha o documento num motor próprio em blocos, então é um estudo à parte.
+- A ponte com a página em volta (`host`: salvar na LegatIA, arquivos do projeto) e a Satoshi na interface.
 
 ## Atualização automática
 
