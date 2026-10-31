@@ -20,6 +20,19 @@ pub const BLUE_400: Color32 = Color32::from_rgb(0x3D, 0x92, 0xFF);
 pub const BLUE_500: Color32 = Color32::from_rgb(0x00, 0x6F, 0xFE);
 pub const BLUE_600: Color32 = Color32::from_rgb(0x00, 0x59, 0xCC);
 
+/// The product's name, where the app writes it (title bar, window, start screen).
+pub const NAME: &str = "LegatIA Photo";
+/// What the start screen says next to the name: the editor is PhotoCraft by the ArtCraft team (plain text,
+/// as the ArtCraft brand licence allows forks to say).
+pub const BASED_ON: &str = "based on PhotoCraft";
+
+/// The start screen's footer: who the editor is based on. It stands in for PhotoCraft's Discord button and its
+/// website, GitHub and ArtCraft links, which point to the upstream project's community.
+pub fn start_footer(_app: &mut crate::PhotocraftApp, ui: &mut egui::Ui) {
+    let t = Tokens::get(ui.ctx());
+    ui.label(egui::RichText::new("Based on PhotoCraft, made by the ArtCraft team and community").color(t.text_faint).size(12.0));
+}
+
 const fn rgb(r: u8, g: u8, b: u8) -> Color32 {
     Color32::from_rgb(r, g, b)
 }
