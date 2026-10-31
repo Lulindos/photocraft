@@ -201,3 +201,13 @@ eframe = { git = "https://github.com/storytold/egui.git", rev = "6d518fc79968157
 egui_demo_lib = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
 egui_inspection = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
 winit = { git = "https://github.com/storytold/winit.git", rev = "a517b3846ee8457d84ee4975110bfda6797c44dc" }
+
+# LegatIA: the craft-libs crates PhotoCraft uses, from the Lulindos fork at the commit that gives craft-ui's dock
+# DockStyle::corner_radius (rounded group cards). See LEGATIA.md and https://github.com/Lulindos/craft-libs
+[patch."https://github.com/storytold/craft-libs"]
+craft-ui = { git = "https://github.com/Lulindos/craft-libs", rev = "55af1e2bdf8fdbe84fc0645a303e4d4f532d27b8" }
+craft-i18n = { git = "https://github.com/Lulindos/craft-libs", rev = "55af1e2bdf8fdbe84fc0645a303e4d4f532d27b8" }
+craft-docpath = { git = "https://github.com/Lulindos/craft-libs", rev = "55af1e2bdf8fdbe84fc0645a303e4d4f532d27b8" }
+craft-fonts-build = { git = "https://github.com/Lulindos/craft-libs", rev = "55af1e2bdf8fdbe84fc0645a303e4d4f532d27b8" }
+craft-jpeg = { git = "https://github.com/Lulindos/craft-libs", rev = "55af1e2bdf8fdbe84fc0645a303e4d4f532d27b8" }
+craft-print = { git = "https://github.com/Lulindos/craft-libs", rev = "55af1e2bdf8fdbe84fc0645a303e4d4f532d27b8" }

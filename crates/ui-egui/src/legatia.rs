@@ -35,13 +35,15 @@ pub fn start_footer(_app: &mut crate::PhotocraftApp, ui: &mut egui::Ui) {
 
 /// Space between the dock's cards and the canvas (LegatIA cards float apart, 6 px, as in LegatIA Design).
 const DOCK_GAP: f32 = 6.0;
+/// The LegatIA cards' corners.
+const CARD_RADIUS: f32 = 18.0;
 
 /// The dock's chrome in the LegatIA look (Studio dark only): the groups sit apart instead of touching.
-/// craft-ui draws every corner square, so the 18 px corners of LegatIA Design need a change in that
-/// library first (see LEGATIA.md, "O que ainda não").
+/// The corners need the Lulindos fork of craft-libs (`DockStyle::corner_radius`, see Cargo.toml and LEGATIA.md).
 pub fn dock_style(style: &mut craft_ui::docking::DockStyle, t: &Tokens) {
     if t.kind == ThemeKind::Studio {
         style.gap = DOCK_GAP;
+        style.corner_radius = CARD_RADIUS;
     }
 }
 
