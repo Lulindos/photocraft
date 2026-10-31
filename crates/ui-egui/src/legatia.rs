@@ -79,6 +79,12 @@ pub fn canvas_or_estimate(canvas: egui::Rect) -> egui::Rect {
     }
 }
 
+/// The frame around the whole dock and canvas: in the Studio dark theme the cards float, with the same 6 px of space
+/// all around (the window's edges and the bars above) as between them.
+pub fn dock_frame(t: &Tokens) -> egui::Frame {
+    if t.kind == ThemeKind::Studio { egui::Frame::NONE.inner_margin(egui::Margin::same(DOCK_GAP as i8)) } else { egui::Frame::NONE }
+}
+
 const fn rgb(r: u8, g: u8, b: u8) -> Color32 {
     Color32::from_rgb(r, g, b)
 }
