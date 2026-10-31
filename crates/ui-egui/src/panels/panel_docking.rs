@@ -192,7 +192,7 @@ fn legacy_layout(app: &PhotocraftApp, all: bool) -> Layout<String> {
 /// Where the Studio themes' Properties card floats: inside the canvas's top right corner.
 fn studio_properties_rect(app: &PhotocraftApp) -> [f32; 4] {
     let (width, height) = (320.0, 440.0);
-    let canvas = app.last_canvas_rect;
+    let canvas = crate::legatia::canvas_or_estimate(app.last_canvas_rect);
     if canvas.is_positive() && canvas.width() > width + 24.0 {
         [canvas.right() - width - 12.0, canvas.top() + 44.0, width, height]
     } else {

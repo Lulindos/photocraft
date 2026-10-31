@@ -8,6 +8,7 @@ use super::{PhotocraftApp, Sense, Tokens, icons, theme, vec2, widgets};
 /// title bar (Windows and Linux, `system_title_bar`) the OS draws its own icon and title, so the
 /// in-app bar shows menus and workspace controls only: no brand mark, no centred title.
 pub fn title_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
+    crate::legatia::note_screen(ui.ctx().content_rect());
     let t = Tokens::get(ui.ctx());
     let custom = app.custom_titlebar;
     let system = system_title_bar(app);

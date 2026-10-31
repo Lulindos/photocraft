@@ -45,6 +45,38 @@ pub fn dock_style(style: &mut craft_ui::docking::DockStyle, t: &Tokens) {
     }
 }
 
+/// Whether the canvas has been drawn at least once: `PhotocraftApp::last_canvas_rect` starts as an 800x600 placeholder
+/// at the origin, and only a document being drawn replaces it.
+pub fn canvas_known(rect: egui::Rect) -> bool {
+    rect != egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(800.0, 600.0))
+}
+
+/// The window's size as the title bar last saw it, for [`canvas_or_estimate`].
+static SCREEN: std::sync::Mutex<Option<egui::Rect>> = std::sync::Mutex::new(None);
+
+/// Called every frame by the title bar with the window's rect.
+pub fn note_screen(rect: egui::Rect) {
+    *SCREEN.lock().unwrap_or_else(|e| e.into_inner()) = Some(rect);
+}
+
+/// What the canvas will take of a `screen` once the dock is up: below the title bar and the tool options, right of
+/// the toolbar, left of the dock column and the icon rail.
+pub fn estimate_canvas(screen: egui::Rect) -> egui::Rect {
+    egui::Rect::from_min_max(egui::pos2(screen.left() + 56.0, screen.top() + 84.0), egui::pos2((screen.right() - 382.0).max(screen.left() + 400.0), screen.bottom() - 40.0))
+}
+
+/// The Studio themes' floating Properties card used to be placed against the 800x600 placeholder, in the middle of
+/// the home screen. Until the canvas is known, place it against an estimate from the window's size.
+pub fn canvas_or_estimate(canvas: egui::Rect) -> egui::Rect {
+    if canvas_known(canvas) {
+        return canvas;
+    }
+    match *SCREEN.lock().unwrap_or_else(|e| e.into_inner()) {
+        Some(screen) if screen.width() > 600.0 => estimate_canvas(screen),
+        _ => canvas,
+    }
+}
+
 const fn rgb(r: u8, g: u8, b: u8) -> Color32 {
     Color32::from_rgb(r, g, b)
 }
@@ -92,6 +124,8 @@ fn dark(t: Tokens) -> Tokens {
         radius_sm: 6.0,
         radius: 10.0,
         radius_lg: 18.0,
+        // The selected row of the layers and history lists, in the brand blue as LegatIA Design's.
+        row_selected: Color32::from_rgba_unmultiplied(0x00, 0x6F, 0xFE, 0x40),
         histogram_bg: rgb(0x0A, 0x0A, 0x0B),
         scrim: Color32::from_black_alpha(140),
         ..t
@@ -143,5 +177,23 @@ mod tests {
             let t = Tokens::for_kind(kind);
             assert_ne!(t.accent, BLUE_500, "{kind:?} should keep its own accent");
         }
+    }
+
+    #[test]
+    fn the_canvas_is_known_once_it_has_been_drawn() {
+        let placeholder = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(800.0, 600.0));
+        assert!(!canvas_known(placeholder));
+        assert!(canvas_known(egui::Rect::from_min_size(egui::pos2(64.0, 40.0), egui::vec2(1040.0, 800.0))));
+    }
+
+    #[test]
+    fn the_estimate_puts_the_canvas_left_of_the_dock() {
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1440.0, 900.0));
+        let canvas = estimate_canvas(screen);
+        assert_eq!(canvas.right(), 1058.0);
+        assert!(canvas.top() > 60.0 && canvas.bottom() < 900.0);
+        // A known canvas is never replaced.
+        let known = egui::Rect::from_min_size(egui::pos2(64.0, 40.0), egui::vec2(1040.0, 800.0));
+        assert_eq!(canvas_or_estimate(known), known);
     }
 }
