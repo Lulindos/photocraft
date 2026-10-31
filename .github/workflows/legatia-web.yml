@@ -1,0 +1,134 @@
+# LegatIA: keeps the `legatia` branch on PhotoCraft's latest release and publishes the web build.
+#
+# sync  - every day (and on demand): when storytold/photocraft has a newer release than LEGATIA_BASE,
+#         replays the LegatIA commits on top of it (git rebase --onto). On a conflict nothing is
+#         published: an issue says which release and the branch stays where it was.
+# build - builds the web version like PhotoCraft's own CI (trunk, packaging/web/package.sh) and
+#         publishes it as a release `<base>-legatia.<run>` with the zip and its SHA-256.
+#         LegatIAdm pins one of these in photocraft.web.json.
+# See LEGATIA.md.
+name: LegatIA web
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "PhotoCraft release to move to (e.g. v0.19.0). Empty: the latest"
+        required: false
+        default: ""
+  schedule:
+    - cron: "37 9 * * *" # 06:37 in Brasília
+  push:
+    branches: [legatia]
+    paths-ignore: ["**.md"]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: legatia-web
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    outputs:
+      base: ${{ steps.sync.outputs.base }}
+      build: ${{ steps.sync.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: legatia
+          fetch-depth: 0
+      - id: sync
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WANT: ${{ inputs.tag }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          git config user.name "legatia-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/storytold/photocraft.git
+          git fetch --quiet --tags --force upstream
+          base=$(tr -d '[:space:]' < LEGATIA_BASE)
+          latest=${WANT:-$(gh release view --repo storytold/photocraft --json tagName -q .tagName)}
+          build=false
+          if [ "$latest" != "$base" ]; then
+            echo "PhotoCraft $latest is out (LegatIA is on $base): replaying the LegatIA commits"
+            if git rebase --onto "$latest" "$base" legatia; then
+              echo "$latest" > LEGATIA_BASE
+              git commit -qam "LegatIA: base $latest"
+              git push --force-with-lease origin legatia
+              base=$latest
+              build=true
+            else
+              git rebase --abort
+              title="LegatIA: conflito ao atualizar para o PhotoCraft $latest"
+              if [ -z "$(gh issue list --state open --search "in:title \"$title\"" --json number -q '.[].number')" ]; then
+                gh issue create --title "$title" --body "O PhotoCraft $latest mexeu nas mesmas linhas que as personalizações da LegatIA (branch \`legatia\`, base $base). Nada foi publicado: a LegatIA continua na versão anterior.
+
+          Para resolver: \`git rebase --onto $latest $base legatia\`, resolver os conflitos (as personalizações ficam em \`crates/ui-egui/src/legatia.rs\` e nas poucas linhas que chamam ele, ver LEGATIA.md), atualizar LEGATIA_BASE e dar push. O build roda sozinho."
+              fi
+              echo "::warning::conflict replaying LegatIA on $latest; issue opened, nothing published"
+            fi
+          elif [ "$EVENT" != "schedule" ]; then
+            # A push to legatia (a LegatIA change) or a manual run: build the same base again
+            build=true
+          elif [ -z "$(gh release list --limit 100 --json tagName -q ".[] | select(.tagName | startswith(\"${base}-legatia\")) | .tagName")" ]; then
+            # Nothing published for this base yet
+            build=true
+          fi
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: sync
+    if: needs.sync.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: 0
+      # Match PhotoCraft's own CI (ci.yml, job "web")
+      TRUNK_VERSION: 0.21.14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: legatia
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: legatia-web
+          cache-on-failure: true
+      - name: Install trunk
+        run: |
+          curl --proto '=https' -fsSL "https://github.com/trunk-rs/trunk/releases/download/v${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz" \
+            | tar -xz -C "$HOME/.cargo/bin" trunk
+          trunk --version
+      - name: Build and zip
+        run: packaging/web/package.sh
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ needs.sync.outputs.base }}
+        run: |
+          set -euo pipefail
+          tag="${BASE}-legatia.${{ github.run_number }}"
+          zip=$(ls dist/release/photocraft-web-*.zip | head -1)
+          out="dist/release/photocraft-web-${tag#v}.zip"
+          mv "$zip" "$out"
+          (cd dist/release && sha256sum "$(basename "$out")" > SHA256SUMS.txt)
+          sha=$(cut -d' ' -f1 dist/release/SHA256SUMS.txt)
+          gh release create "$tag" "$out" dist/release/SHA256SUMS.txt \
+            --target "$(git rev-parse HEAD)" \
+            --title "LegatIA Photo ${tag}" \
+            --notes "Versão web do PhotoCraft ${BASE} com a cara da LegatIA (branch \`legatia\`).
+
+          Para usar no LegatIAdm, em \`photocraft.web.json\`:
+          \`\`\`json
+          { \"version\": \"${tag#v}\", \"url\": \"https://github.com/${{ github.repository }}/releases/download/${tag}/$(basename "$out")\", \"sha256\": \"${sha}\" }
+          \`\`\`"

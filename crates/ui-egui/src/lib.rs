@@ -35,6 +35,7 @@ pub mod i18n;
 mod icon_data;
 pub mod icons;
 pub mod jobs_ui;
+pub mod legatia;
 pub(crate) mod last_brush;
 pub mod links;
 pub mod menu_catalog;

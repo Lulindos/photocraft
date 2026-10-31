@@ -28,12 +28,13 @@ pub enum ThemeKind {
     /// Photoshop-style Spectrum dark: flat charcoal panels, tab strips, blue accents (darkest brightness).
     Pro,
     /// Photoshop's default (second) interface brightness: #535353 panels, #282828 canvas (default).
-    #[default]
     ProMedium,
     /// Photoshop's third interface brightness: #B8B8B8 panels (#2661).
     ProLightGray,
     /// Photoshop's fourth (lightest) interface brightness: #F0F0F0 panels (#2661).
     ProLight,
+    /// LegatIA: the Studio theme in the LegatIA colours (the default, see legatia.rs).
+    #[default]
     Studio,
     StudioLight,
     Classic,
@@ -77,8 +78,8 @@ impl ThemeKind {
             ThemeKind::ProMedium => "Pro (Medium Gray)",
             ThemeKind::ProLightGray => "Pro (Light Gray)",
             ThemeKind::ProLight => "Pro (Light)",
-            ThemeKind::Studio => "Studio (Dark)",
-            ThemeKind::StudioLight => "Studio (Light)",
+            ThemeKind::Studio => "LegatIA (Dark)",
+            ThemeKind::StudioLight => "LegatIA (Light)",
             ThemeKind::Classic => "Classic",
             ThemeKind::Adwaita => "Adwaita (Light)",
             ThemeKind::AdwaitaDark => "Adwaita (Dark)",
@@ -219,7 +220,12 @@ impl Tokens {
         [Color32::from_black_alpha(160), Color32::from_white_alpha(235)]
     }
 
+    /// LegatIA: the Studio themes in the LegatIA colours (see legatia.rs); the rest as upstream.
     pub fn for_kind(kind: ThemeKind) -> Self {
+        crate::legatia::tokens(Self::for_kind_base(kind))
+    }
+
+    fn for_kind_base(kind: ThemeKind) -> Self {
         match kind {
             // Sampled from Photoshop 2026's default brightness (raw display values).
             ThemeKind::ProMedium => Tokens {
